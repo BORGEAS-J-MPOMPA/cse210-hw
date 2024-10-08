@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public class Program
 {
-    
     public class ScriptureReference
     {
         private string book;
@@ -46,26 +46,30 @@ public class Program
     {
         private string word;
         private bool isHidden;
+
         public Word(string word)
         {
             this.word = word;
             this.isHidden = false;
         }
+
         public void Hide()
         {
             isHidden = true;
         }
+
         public bool IsHidden()
         {
             return isHidden;
         }
+
         public string GetDisplayText()
         {
             return isHidden ? new string('_', word.Length) : word;
         }
     }
 
-        public class Scripture
+    public class Scripture
     {
         private ScriptureReference reference;
         private List<Word> words;
@@ -91,14 +95,19 @@ public class Program
             Console.WriteLine();
         }
 
-        public void HideRandomWords(int numberOfWordsToHide)
+        public bool HideRandomWord()
         {
             Random random = new Random();
-            for (int i = 0; i < numberOfWordsToHide; i++)
+            List<Word> visibleWords = words.Where(w => !w.IsHidden()).ToList();
+            
+            if (visibleWords.Count > 0)
             {
-                int index = random.Next(words.Count);
-                words[index].Hide();
+                int index = random.Next(visibleWords.Count);
+                visibleWords[index].Hide();
+                return true;
             }
+
+            return false; // No more words to hide
         }
 
         public bool AreAllWordsHidden()
@@ -107,28 +116,62 @@ public class Program
         }
     }
 
-        static void Main(string[] args)
+    static void Main(string[] args)
+    {
+        // Define multiple scripture references and texts
+        List<Scripture> scriptures = new List<Scripture>()
         {
-            // Example scripture with reference and text
-            ScriptureReference reference = new ScriptureReference("John", 3, 16);
-            Scripture scripture = new Scripture(reference, "For God so loved the world that he gave his one and only Son that whoever believes in him shall not perish but have eternal life.");
+            new Scripture(new ScriptureReference("John", 3, 16), "For God so loved the world that he gave his one and only Son that whoever believes in him shall not perish but have eternal life."),
+            new Scripture(new ScriptureReference("Proverbs", 3, 5, 6), "Trust in the Lord with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight."),
+            new Scripture(new ScriptureReference("Proverbs", 27, 1, 3), "Do not boast about tomorrow, for you do not know what a day may bring. Let someone else praise you, and not your own mouth; an outsider, and not your own lips. Stone is heavy and sand a burden, but a fool's provocation is heavier than both."),
+            new Scripture(new ScriptureReference("Hebrews", 13, 8), "Jesus Christ is the same yesterday and today and forever.")
+        };
 
-            while (!scripture.AreAllWordsHidden())
+        int currentScriptureIndex = 0;
+
+        while (true)
+        {
+            Console.Clear();
+            
+            // Display the current scripture passage
+            Scripture currentScripture = scriptures[currentScriptureIndex];
+            currentScripture.Display();
+
+            if (currentScripture.AreAllWordsHidden())
             {
-                Console.Clear();
-                scripture.Display();
-
-                Console.WriteLine("\nPress Enter to hide words or type 'quit' to exit:");
-                string input = Console.ReadLine();
-
-                if (input.ToLower() == "quit")
+                currentScriptureIndex++;
+                if (currentScriptureIndex >= scriptures.Count)
                 {
+                    // All passages have been hidden
+                    Console.WriteLine("All scriptures are hidden. Goodbye!");
                     break;
                 }
-
-                scripture.HideRandomWords(3); // Hiding 3 random words at a time
+                else
+                {
+                    continue; // Move to the next passage
+                }
             }
 
-            Console.WriteLine("All words are hidden. Goodbye!");
+            Console.WriteLine("\nPress Enter to hide a word or type 'quit' to exit:");
+            string input = Console.ReadLine();
+
+            if (input.ToLower() == "quit")
+            {
+                break;
+            }
+
+            if (!currentScripture.HideRandomWord())
+            {
+                // This should never happen because we check AreAllWordsHidden first,
+                // but just in case, we handle it here.
+                Console.WriteLine("All words are hidden for this scripture. Moving to the next one.");
+                currentScriptureIndex++;
+                if (currentScriptureIndex >= scriptures.Count)
+                {
+                    Console.WriteLine("All scriptures are hidden. Goodbye!");
+                    break;
+                }
+            }
         }
+    }
 }
