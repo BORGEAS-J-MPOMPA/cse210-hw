@@ -1,153 +1,220 @@
 using System;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-
-public class Program
+public abstract class Goal
 {
-    public class ScriptureReference
+    protected string description;
+    protected int points;
+    protected bool isComplete;
+
+    public Goal(string description, int points)
     {
-        private string book;
-        private int chapter;
-        private int startVerse;
-        private int endVerse;
+        this.description = description;
+        this.points = points;
+        this.isComplete = false;
+    }
 
-        // Constructor for single verse
-        public ScriptureReference(string book, int chapter, int verse)
+    public abstract void RecordEvent(); // To record progress on the goal
+    public abstract string GetStatus(); // To display progress status
+
+    public string GetDescription()
+    {
+        return description;
+    }
+
+    public int GetPoints()
+    {
+        return points;
+    }
+
+    public bool IsComplete()
+    {
+        return isComplete;
+    }
+}
+
+public class SimpleGoal : Goal
+{
+    public SimpleGoal(string description, int points) : base(description, points) { }
+
+    public override void RecordEvent()
+    {
+        isComplete = true;
+    }
+
+    public override string GetStatus()
+    {
+        return isComplete ? "[X] " + description : "[ ] " + description;
+    }
+}
+
+public class EternalGoal : Goal
+{
+    public EternalGoal(string description, int points) : base(description, points) { }
+
+    public override void RecordEvent()
+    {
+        // Since this goal is eternal, it never gets "completed"
+        // Just add points for each instance
+    }
+
+    public override string GetStatus()
+    {
+        return "[∞] " + description;
+    }
+}
+
+public class ChecklistGoal : Goal
+{
+    private int targetCount;
+    private int currentCount;
+    private int bonusPoints;
+
+    public ChecklistGoal(string description, int points, int targetCount, int bonusPoints) 
+        : base(description, points)
+    {
+        this.targetCount = targetCount;
+        this.currentCount = 0;
+        this.bonusPoints = bonusPoints;
+    }
+
+    public override void RecordEvent()
+    {
+        currentCount++;
+        if (currentCount >= targetCount)
         {
-            this.book = book;
-            this.chapter = chapter;
-            this.startVerse = verse;
-            this.endVerse = verse;
+            isComplete = true;
         }
+    }
 
-        // Constructor for verse range
-        public ScriptureReference(string book, int chapter, int startVerse, int endVerse)
-        {
-            this.book = book;
-            this.chapter = chapter;
-            this.startVerse = startVerse;
-            this.endVerse = endVerse;
-        }
+    public override string GetStatus()
+    {
+        return isComplete 
+            ? $"[X] {description} - Completed {currentCount}/{targetCount} times" 
+            : $"[ ] {description} - Completed {currentCount}/{targetCount} times";
+    }
 
-        public string GetReference()
+    public int GetBonusPoints()
+    {
+        return isComplete ? bonusPoints : 0;
+    }
+}
+
+class EternalQuestProgram
+{
+    private List<Goal> goals = new List<Goal>();
+    private int totalPoints = 0;
+
+    public void Run()
+    {
+        int choice = -1;
+        while (choice != 0)
         {
-            if (startVerse == endVerse)
+            Console.WriteLine("\nEternal Quest Program");
+            Console.WriteLine("1. Create a New Goal");
+            Console.WriteLine("2. Record an Event");
+            Console.WriteLine("3. Display Goals");
+            Console.WriteLine("4. Display Total Score");
+            Console.WriteLine("0. Quit");
+            Console.Write("Enter your choice: ");
+            choice = int.Parse(Console.ReadLine());
+
+            switch (choice)
             {
-                return $"{book} {chapter}:{startVerse}";
-            }
-            else
-            {
-                return $"{book} {chapter}:{startVerse}-{endVerse}";
+                case 1:
+                    CreateGoal();
+                    break;
+                case 2:
+                    RecordEvent();
+                    break;
+                case 3:
+                    DisplayGoals();
+                    break;
+                case 4:
+                    DisplayTotalScore();
+                    break;
             }
         }
     }
 
-    public class Word
+    private void CreateGoal()
     {
-        private string word;
-        private bool isHidden;
+        Console.WriteLine("Select goal type:");
+        Console.WriteLine("1. Simple Goal");
+        Console.WriteLine("2. Eternal Goal");
+        Console.WriteLine("3. Checklist Goal");
+        Console.Write("Enter choice: ");
+        int goalType = int.Parse(Console.ReadLine());
 
-        public Word(string word)
+        Console.Write("Enter goal description: ");
+        string description = Console.ReadLine();
+
+        Console.Write("Enter points for completing the goal: ");
+        int points = int.Parse(Console.ReadLine());
+
+        if (goalType == 1)
         {
-            this.word = word;
-            this.isHidden = false;
+            goals.Add(new SimpleGoal(description, points));
         }
-
-        public void Hide()
+        else if (goalType == 2)
         {
-            isHidden = true;
+            goals.Add(new EternalGoal(description, points));
         }
-
-        public bool IsHidden()
+        else if (goalType == 3)
         {
-            return isHidden;
-        }
+            Console.Write("Enter the number of times the goal must be completed: ");
+            int targetCount = int.Parse(Console.ReadLine());
 
-        public string GetDisplayText()
-        {
-            return isHidden ? new string('_', word.Length) : word;
+            Console.Write("Enter bonus points for completing the checklist: ");
+            int bonusPoints = int.Parse(Console.ReadLine());
+
+            goals.Add(new ChecklistGoal(description, points, targetCount, bonusPoints));
         }
     }
 
-    public class Scripture
+    private void RecordEvent()
     {
-        private ScriptureReference reference;
-        private List<Word> words;
+        DisplayGoals();
 
-        public Scripture(ScriptureReference reference, string text)
-        {
-            this.reference = reference;
-            words = new List<Word>();
-            string[] wordArray = text.Split(' ');
-            foreach (string word in wordArray)
-            {
-                words.Add(new Word(word));
-            }
-        }
+        Console.Write("Select a goal to record an event for (number): ");
+        int goalIndex = int.Parse(Console.ReadLine());
 
-        public void Display()
+        if (goalIndex >= 0 && goalIndex < goals.Count)
         {
-            Console.WriteLine(reference.GetReference());
-            foreach (Word word in words)
-            {
-                Console.Write(word.GetDisplayText() + " ");
-            }
-            Console.WriteLine();
-        }
+            Goal selectedGoal = goals[goalIndex];
+            selectedGoal.RecordEvent();
+            totalPoints += selectedGoal.GetPoints();
 
-        public bool HideRandomWord()
-        {
-            Random random = new Random();
-            List<Word> visibleWords = words.Where(w => !w.IsHidden()).ToList();
-            
-            if (visibleWords.Count > 0)
+            // Add bonus points for checklist goal
+            if (selectedGoal is ChecklistGoal checklistGoal && checklistGoal.IsComplete())
             {
-                int index = random.Next(visibleWords.Count);
-                visibleWords[index].Hide();
-                return true;
+                totalPoints += checklistGoal.GetBonusPoints();
             }
 
-            return false; // No more words to hide
-        }
-
-        public bool AreAllWordsHidden()
-        {
-            return words.All(w => w.IsHidden());
+            Console.WriteLine("Event recorded!");
         }
     }
 
+    private void DisplayGoals()
+    {
+        Console.WriteLine("\nGoals:");
+        for (int i = 0; i < goals.Count; i++)
+        {
+            Console.WriteLine($"{i}. {goals[i].GetStatus()}");
+        }
+    }
+
+    private void DisplayTotalScore()
+    {
+        Console.WriteLine($"Total Score: {totalPoints} points");
+    }
+}
+
+class Program
+{
     static void Main(string[] args)
     {
-        // Example scripture with reference and text
-        ScriptureReference reference = new ScriptureReference("John", 3, 16);
-        Scripture scripture = new Scripture(reference, "For God so loved the world that he gave his one and only Son that whoever believes in him shall not perish but have eternal life.");
-
-        while (true)
-        {
-            Console.Clear();
-            scripture.Display();
-
-            if (scripture.AreAllWordsHidden())
-            {
-                Console.WriteLine("All words are hidden. Goodbye!");
-                break;
-            }
-
-            Console.WriteLine("\nPress Enter to hide a word or type 'quit' to exit:");
-            string input = Console.ReadLine();
-
-            if (input.ToLower() == "quit")
-            {
-                break;
-            }
-
-            if (!scripture.HideRandomWord())
-            {
-                // This should never happen because we check AreAllWordsHidden first,
-                // but just in case, we handle it here.
-                Console.WriteLine("All words are hidden. Goodbye!");
-                break;
-            }
-        }
+        EternalQuestProgram questProgram = new EternalQuestProgram();
+        questProgram.Run();
     }
 }
