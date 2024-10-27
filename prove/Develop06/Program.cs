@@ -2,12 +2,14 @@ using System;
 using System.Collections.Generic;
 public abstract class Goal
 {
+    protected string name;
     protected string description;
     protected int points;
     protected bool isComplete;
 
-    public Goal(string description, int points)
+    public Goal(string name, string description, int points)
     {
+        this.name = name;
         this.description = description;
         this.points = points;
         this.isComplete = false;
@@ -16,6 +18,11 @@ public abstract class Goal
     public abstract void RecordEvent(); // To record progress on the goal
     public abstract string GetStatus(); // To display progress status
 
+
+    public string GetName()
+    {
+        return name;
+    }
     public string GetDescription()
     {
         return description;
@@ -34,7 +41,7 @@ public abstract class Goal
 
 public class SimpleGoal : Goal
 {
-    public SimpleGoal(string description, int points) : base(description, points) { }
+    public SimpleGoal(string name, string description, int points) : base( name, description, points) { }
 
     public override void RecordEvent()
     {
@@ -43,13 +50,13 @@ public class SimpleGoal : Goal
 
     public override string GetStatus()
     {
-        return isComplete ? "[X] " + description : "[ ] " + description;
+        return isComplete ? "[X] " +name +": "+ description : "[ ] " +name +": "+ description;
     }
 }
 
 public class EternalGoal : Goal
 {
-    public EternalGoal(string description, int points) : base(description, points) { }
+    public EternalGoal(String name, string description, int points) : base(name, description, points) { }
 
     public override void RecordEvent()
     {
@@ -59,7 +66,7 @@ public class EternalGoal : Goal
 
     public override string GetStatus()
     {
-        return "[∞] " + description;
+        return "[∞] " + name +": "+ description;
     }
 }
 
@@ -69,8 +76,8 @@ public class ChecklistGoal : Goal
     private int currentCount;
     private int bonusPoints;
 
-    public ChecklistGoal(string description, int points, int targetCount, int bonusPoints) 
-        : base(description, points)
+    public ChecklistGoal(string name, string description, int points, int targetCount, int bonusPoints) 
+        : base(name, description, points)
     {
         this.targetCount = targetCount;
         this.currentCount = 0;
@@ -89,8 +96,8 @@ public class ChecklistGoal : Goal
     public override string GetStatus()
     {
         return isComplete 
-            ? $"[X] {description} - Completed {currentCount}/{targetCount} times" 
-            : $"[ ] {description} - Completed {currentCount}/{targetCount} times";
+            ? $"[X] {name}: {description} - Completed {currentCount}/{targetCount} times" 
+            : $"[ ] {name}: {description} - Completed {currentCount}/{targetCount} times";
     }
 
     public int GetBonusPoints()
@@ -145,6 +152,10 @@ class EternalQuestProgram
         Console.Write("Enter choice: ");
         int goalType = int.Parse(Console.ReadLine());
 
+        // Name the goal
+        Console.Write("Enter the name of your goal: ");
+        string name = Console.ReadLine();
+
         Console.Write("Enter goal description: ");
         string description = Console.ReadLine();
 
@@ -153,11 +164,11 @@ class EternalQuestProgram
 
         if (goalType == 1)
         {
-            goals.Add(new SimpleGoal(description, points));
+            goals.Add(new SimpleGoal(name, description, points));
         }
         else if (goalType == 2)
         {
-            goals.Add(new EternalGoal(description, points));
+            goals.Add(new EternalGoal(name, description, points));
         }
         else if (goalType == 3)
         {
@@ -167,7 +178,7 @@ class EternalQuestProgram
             Console.Write("Enter bonus points for completing the checklist: ");
             int bonusPoints = int.Parse(Console.ReadLine());
 
-            goals.Add(new ChecklistGoal(description, points, targetCount, bonusPoints));
+            goals.Add(new ChecklistGoal(name, description, points, targetCount, bonusPoints));
         }
     }
 
