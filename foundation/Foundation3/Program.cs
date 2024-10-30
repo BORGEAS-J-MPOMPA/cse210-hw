@@ -4,7 +4,7 @@ using System.Collections.Generic;
 public abstract class Activity
 {
     protected DateTime date;
-    protected int durationMinutes; // Length of activity in minutes
+    protected int durationMinutes;
 
     public Activity(DateTime date, int durationMinutes)
     {
@@ -12,19 +12,21 @@ public abstract class Activity
         this.durationMinutes = durationMinutes;
     }
 
-    public abstract double GetDistance(); // Distance in miles or km
-    public abstract double GetSpeed();    // Speed in mph or kph
-    public abstract double GetPace();     // Pace in min per mile or km
+    // Abstract Methods
+    public abstract double GetDistance();
+    public abstract double GetSpeed();
+    public abstract double GetPace();
 
+    // Summary of the Activity
     public virtual string GetSummary()
     {
-        return $"{date.ToString("dd MMM yyyy")} ({durationMinutes} min)";
+        return $"{date:dd MMM yyyy} ({durationMinutes} min)";
     }
 }
 
 public class Running : Activity
 {
-    private double distanceMiles; // Distance in miles
+    private double distanceMiles;
 
     public Running(DateTime date, int durationMinutes, double distanceMiles)
         : base(date, durationMinutes)
@@ -32,21 +34,11 @@ public class Running : Activity
         this.distanceMiles = distanceMiles;
     }
 
-    public override double GetDistance()
-    {
-        return distanceMiles;
-    }
+    public override double GetDistance() => distanceMiles;
+    public override double GetSpeed() => (distanceMiles / durationMinutes) * 60;
+    public override double GetPace() => durationMinutes / distanceMiles;
 
-    public override double GetSpeed()
-    {
-        return (distanceMiles / durationMinutes) * 60; // Speed in miles per hour
-    }
-
-    public override double GetPace()
-    {
-        return durationMinutes / distanceMiles; // Pace in min per mile
-    }
-
+    // Override GetSummary Method
     public override string GetSummary()
     {
         return $"{base.GetSummary()} - Running: Distance {distanceMiles} miles, Speed {GetSpeed():F1} mph, Pace: {GetPace():F1} min per mile";
@@ -55,7 +47,7 @@ public class Running : Activity
 
 public class Cycling : Activity
 {
-    private double speedMph; // Speed in miles per hour
+    private double speedMph;
 
     public Cycling(DateTime date, int durationMinutes, double speedMph)
         : base(date, durationMinutes)
@@ -63,30 +55,20 @@ public class Cycling : Activity
         this.speedMph = speedMph;
     }
 
-    public override double GetDistance()
-    {
-        return (speedMph * durationMinutes) / 60; // Distance in miles
-    }
+    public override double GetDistance() => (speedMph * durationMinutes) / 60;
+    public override double GetSpeed() => speedMph;
+    public override double GetPace() => 60 / speedMph;
 
-    public override double GetSpeed()
-    {
-        return speedMph; // Speed in miles per hour
-    }
-
-    public override double GetPace()
-    {
-        return 60 / speedMph; // Pace in min per mile
-    }
-
+    // Override GetSummary Method
     public override string GetSummary()
     {
-        return $"{base.GetSummary()} - Cycling: Distance {GetDistance():F1} miles, Speed {speedMph} mph, Pace: {GetPace():F1} min per mile";
+        return $"{base.GetSummary()} - Cycling: Distance {GetDistance():F1} miles, Speed {GetSpeed():F1} mph, Pace: {GetPace():F1} min per mile";
     }
 }
 
 public class Swimming : Activity
 {
-    private int laps; // Number of laps (1 lap = 50 meters)
+    private int laps;
 
     public Swimming(DateTime date, int durationMinutes, int laps)
         : base(date, durationMinutes)
@@ -94,42 +76,41 @@ public class Swimming : Activity
         this.laps = laps;
     }
 
-    public override double GetDistance()
-    {
-        double distanceKm = (laps * 50) / 1000.0; // Convert meters to kilometers
-        return distanceKm * 0.62; // Convert km to miles
-    }
+    public override double GetDistance() => laps * 50 / 1000.0 * 0.62; // Converts laps to miles
+    public override double GetSpeed() => (GetDistance() / durationMinutes) * 60;
+    public override double GetPace() => durationMinutes / GetDistance();
 
-    public override double GetSpeed()
-    {
-        return (GetDistance() / durationMinutes) * 60; // Speed in miles per hour
-    }
-
-    public override double GetPace()
-    {
-        return durationMinutes / GetDistance(); // Pace in min per mile
-    }
-
+    // Override GetSummary Method
     public override string GetSummary()
     {
         return $"{base.GetSummary()} - Swimming: Distance {GetDistance():F1} miles, Speed {GetSpeed():F1} mph, Pace: {GetPace():F1} min per mile";
     }
 }
 
-class Program
+public class Program
 {
-    static void Main(string[] args)
+    private static readonly Random random = new Random();
+
+    private static DateTime GetRandomDate()
     {
-        // Create a list of activities
-        List<Activity> activities = new List<Activity>();
+        int year = random.Next(2020, 2024); // Years from 2020 to 2023
+        int month = random.Next(1, 13); // Months from January (1) to December (12)
+        int day = random.Next(1, DateTime.DaysInMonth(year, month) + 1); // Valid day for given month and year
+        return new DateTime(year, month, day);
+    }
 
-        // Create instances of each activity type
-        activities.Add(new Running(new DateTime(2022, 11, 3), 30, 3.0));
-        activities.Add(new Cycling(new DateTime(2022, 11, 4), 40, 12.0));
-        activities.Add(new Swimming(new DateTime(2022, 11, 5), 25, 20));
+    public static void Main()
+    {
+        // Create random activities
+        var activities = new List<Activity>
+        {
+            new Running(GetRandomDate(), random.Next(20, 61), 3.0),   // 20-60 minutes, 3 miles
+            new Cycling(GetRandomDate(), random.Next(20, 61), 15.0),  // 20-60 minutes, 15 mph
+            new Swimming(GetRandomDate(), random.Next(20, 61), 20)    // 20-60 minutes, 20 laps
+        };
 
-        // Iterate through the list and display the summary for each activity
-        foreach (Activity activity in activities)
+        // Display summaries
+        foreach (var activity in activities)
         {
             Console.WriteLine(activity.GetSummary());
         }
